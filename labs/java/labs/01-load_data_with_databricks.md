@@ -1,4 +1,4 @@
-# Load Data Into Cosmos DB with ADF
+# Load Data Into Cosmos DB with Azure Databricks
 
 In this lab, you will populate an Azure Cosmos DB container from an existing set of data using tools built in to Azure. After importing, you will use the Azure portal to view your imported data.
 
