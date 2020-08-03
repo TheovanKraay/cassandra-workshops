@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp2.2</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="CosmosFailoverAwareRRPolicy.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Bogus" Version="29.0.2" />
+        <PackageReference Include="CassandraCSharpDriver" Version="3.14.0" />
+        <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.0.0" />
+    </ItemGroup>
+</Project>

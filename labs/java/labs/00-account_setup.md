@@ -1,0 +1,20 @@
+# Account Setup
+
+In this lab, you will setup your Azure subscription with the required resources needed to perform the Cosmos DB labs. The estimated cost to run these labs if you do it in one sitting is ~$100 USD.
+
+## Prerequisites
+
+- Azure Paid Subscription
+
+### Run Setup program
+
+1. Click below to deploy to Azure
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTheovanKraay%2Fcassandra-workshop%2Fmaster%2Flabs%2Fjava%2Fdeploy%2Fazuredeploy.json)
+
+
+2. In the deployment template form that appears, create a new resource group (or select and existing one), and add a unique value (e.g. your initials) to the pre-populated account name.
+
+![Create Resources](../media/setup.png "Add a new resource group")
+
+3. Click `review + create`, and then `create` when the validation has passed. It can take up to 15 minutes for your account to be provisioned and keyspace/tables to be created. You can inspect the ARM template [here](../deploy/azuredeploy.json). 

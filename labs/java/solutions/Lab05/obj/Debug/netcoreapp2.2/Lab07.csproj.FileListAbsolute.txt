@@ -1,0 +1,13 @@
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\obj\Debug\netcoreapp2.2\Lab07.csprojAssemblyReference.cache
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\obj\Debug\netcoreapp2.2\Lab07.AssemblyInfoInputs.cache
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\obj\Debug\netcoreapp2.2\Lab07.AssemblyInfo.cs
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Microsoft.Azure.Cosmos.ServiceInterop.dll
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Cosmos.CRTCompat.dll
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Lab07.deps.json
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Lab07.runtimeconfig.json
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Lab07.runtimeconfig.dev.json
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Lab07.dll
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\bin\Debug\netcoreapp2.2\Lab07.pdb
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\obj\Debug\netcoreapp2.2\Lab07.dll
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\obj\Debug\netcoreapp2.2\Lab07.pdb
+C:\github\givenscj\cosmos-labs\cassandra\dotnet\setup\templates\Lab07\obj\Debug\netcoreapp2.2\Lab07.csproj.CoreCompileInputs.cache
