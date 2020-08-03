@@ -6,3 +6,7 @@ TODO
 
 
 > If this is your final lab, follow the steps in [Removing Lab Assets](07-cleaning_up.md) to remove all lab resources.
+
+## Additional Resources
+
+- https://github.com/Azure-Samples/azure-cosmos-cassandra-java-retry-sample
