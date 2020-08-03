@@ -4,7 +4,7 @@
    "parameters": {
       "accountName": {
          "type": "string",
-         "defaultValue": "cassandra-labs",
+         "defaultValue": "cassandra",
          "metadata": {
             "description": "Cosmos DB account name, max length 44 characters"
          }

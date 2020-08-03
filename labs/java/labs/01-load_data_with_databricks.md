@@ -58,12 +58,10 @@ You will use **Azure Databricks** to import the JSON array stored in the **nutri
 
 3. If you see a Data Bricks resource, you can skip to step 5, otherwise select **Add** to add a new resource
 
-    ![A data factory resource is highlighted](../media/03-adf-isntance.png "Review if you have data factory already")
-
     ![Select Add in the nav bar](../media/03-add_adf.jpg "Add a new resource")
 
-   - Search for **Data Bricks** and select it.
-   - Create a new **Data Bricks**. You should name this data bricks **importnutritiondata** with a unique number appended and select the relevant Azure subscription. You should ensure your existing **cosmoslabs** resource group is selected
+   - Search for **Databricks** and select it.
+   - Create a new **Databricks**. You should name this data bricks **importnutritiondata** with a unique number appended and select the relevant Azure subscription. You should ensure your existing **cosmoslabs** resource group is selected
    - Select **East US** as the region.
    - Select **Create**.
 
@@ -78,12 +76,11 @@ You will use **Azure Databricks** to import the JSON array stored in the **nutri
 12. For the library source, select **Maven**
 13. For the coordinates, type `datastax:spark-cassandra-connector:2.4.0-s_2.11`
 14. Select **Install**
-15. Repeat the same to install the coordinates, type `com.microsoft.azure.cosmosdb:azure-cosmos-cassandra-spark-helper:1.0.0` (this is a helper library to handle rate limiting in Azure Cosmos DB)
-17. In the left navigation, select **Azure Databricks**
-18. Select **New Notebook**
-19. For the name, type **cassandra**
-20. For the cluster, select the **basic** cluster you just created
-21. In the first cell, type the following
+15. In the left navigation, select **Azure Databricks**
+16. Select **New Notebook**
+17. For the name, type **cassandra**
+18. For the cluster, select the **basic** cluster you just created
+19. In the first cell, type the following
 
 ```python
 spark.conf.set("spark.cassandra.connection.host","YOURNAME.cassandra.cosmos.azure.com")
@@ -156,7 +153,7 @@ You will validate that the data was successfully imported into your table using 
 
 1. Within the **foodcollection** node, select the **Rows** link to view a subset of the various rows in the table. Select a few of the documents and observe the properties and structure of the documents.
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> If this is your final lab, follow the steps in [Removing Lab Assets](07-cleaning_up.md) to remove all lab resources.
 
 ## More Resources
 

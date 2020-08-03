@@ -1,4 +1,4 @@
-# Querying in Azure Cosmos DB
+# Querying in Azure Cosmos DB Cassandra API with hosted CQLSH
 
 Azure Cosmos DB Cassandra API accounts provide support for querying items using the Cassandra Query Language (CQL). In this lab, you will explore how to use these rich query capabilities directly through the Azure Portal. No separate tools or client side code are required.
 
@@ -12,39 +12,44 @@ Querying tables with CQL allows Azure Cosmos DB to combine the advantages of Cos
 
 ## Running your first query
 
-In this lab section, you will query your **foodcollection**.
+In this lab section, you will query your **foodtable**.
 
-### Simple queries
+### Set up hosted CQLSH
 
-#CRUD
+First, click on `Open Cassandra Shell`
 
-insert
-update
-delete
-batch
+![Select Add in the nav bar](../media/query1.png "setup1")
+
+When clicking on this, you will be prompted to complete setup:
+
+![Select Add in the nav bar](../media/query2.png "setup2")
+
+Then, you can click on `Open Cassandra Shell` again to get the hosted shell. 
+
+![Select Add in the nav bar](../media/query3.png "setup3")
+
+Lets try a count of the records you inserted in lab one:
+
+```sql
+select count(*) from from nutritionkeyspace.foodtable;
+```
+
+You should see a count of approx 8618 records:
+
+![Select Add in the nav bar](../media/query4.png "setup4")
 
 ### Exploring Indexing
 
-In this lab, you will modify the indexing policy of an Azure Cosmos DB container. You will explore how you can optimize indexing policy for write or read heavy workloads as well as understand the indexing requirements for different SQL API query features.
+TODO 
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
-2. In the **Data Explorer** section, expand the **nutritiondatabase** keyspace node and then expand the **foodcollection** table node.
-3. Within the **foodcollection** node, select the **Rows** link.
-4. View the items within the container. Observe how these documents have many properties.
+### Exploring Queries
 
-5. Select **Add new clause**
-6. Select **foodgroup**
-7. For the value, type **Snacks**
-8. Select **Run Query**, you should get an error
-
-9.  Open the `Lab03` folder in Visual Studio code
-10. update the connection values
-11. Run the project, it will execute the following CQL:
+TODO
 
 ```sql
-CREATE INDEX ON nutritiondatabase.foodcollection (foodgroup);
+CREATE INDEX ON nutritiondatabase.foodtable (foodgroup);
 
-CREATE INDEX ON nutritiondatabase.foodcollection (foodid);
+CREATE INDEX ON nutritiondatabase.foodtable (foodid);
 ```
 
 13. Re-run the CQL query, you should now get back results
@@ -52,48 +57,6 @@ CREATE INDEX ON nutritiondatabase.foodcollection (foodid);
 ### Exploring Paging
 
 TODO 
-
-```csharp
-public static RowSet SelectDistinctPrimaryKeysFromTagReadings(byte[] pagingState)
-{
-    try
-    {
-        // will execute on continuing after failing in between. 
-        if (pagingState != null)
-        {
-            PreparedStatement preparedStatement = BLL.currentSession.Prepare("SELECT DISTINCT \"Url\",\"Id\" FROM \"Readings\" ");
-            BoundStatement boundStatement = preparedStatement.Bind();
-            IStatement istatement = boundStatement.SetAutoPage(false).SetPageSize(1000).SetPagingState(pagingState);
-            return BLL.currentSession.Execute(istatement);
-        }
-        else
-        {
-            PreparedStatement preparedStatement = BLL.currentSession.Prepare("SELECT DISTINCT \"Url\",\"Id\" FROM \"Readings\" ");
-            BoundStatement boundStatement = preparedStatement.Bind();
-            IStatement istatement = boundStatement.SetAutoPage(false).SetPageSize(1000);
-            return BLL.currentSession.Execute(istatement);                    
-        }
-    }
-    catch (Exception ex)
-    {
-        throw ex;
-    }
-}
-```
-
-4. Add the following lines of code to page through the results of this query using a while loop.
-
-    ```csharp
-    int pageCount = 0;
-    while (queryB.HasMoreResults)
-    {
-        Console.Out.WriteLine($"---Page #{++pageCount:0000}---");
-        foreach (var food in await queryB.ReadNextAsync())
-        {
-            Console.Out.WriteLine($"\t[{food.Id}]\t{food.Description,-20}\t{food.ManufacturerName,-40}");
-        }
-    }
-    ```
 
 ### Exploring Query Costs
 
