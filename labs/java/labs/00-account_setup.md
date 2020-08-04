@@ -10,7 +10,7 @@ In this lab, you will setup your Azure subscription with the required resources 
 
 1. Click below to deploy to Azure
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTheovanKraay%2Fcassandra-workshop%2Fmaster%2Flabs%2Fjava%2Fdeploy%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTheovanKraay%2Fcassandra-workshops%2Fmaster%2Flabs%2Fjava%2Fdeploy%2Fazuredeploy.json)
 
 
 2. In the deployment template form that appears, create a new resource group called `cosmoslabs` and add a unique value (e.g. your initials) to the pre-populated account name:
