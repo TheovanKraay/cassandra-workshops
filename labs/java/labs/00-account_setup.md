@@ -8,11 +8,11 @@ In this lab, you will setup your Azure subscription with the required resources 
 
 ## Run Setup program
 
-The following resources will be deploy as a part of the setup process:
+The following resources will be deployed as a part of the setup process:
 
 - Azure Cosmos DB account with Cassandra API enabled
-- Cassandra keyspaces and tables
-- Azure Databricks Workspace - You will be using this to import data to Azure Cosmos DB
+- Cassandra keyspaces (`nutritionkeyspace`, `storekeyspace`) and tables (`foodtable`, `carttable`)
+- Azure Databricks Workspace - You will be using this to import data into Azure Cosmos DB
 
 1. Click below to deploy to Azure
 
