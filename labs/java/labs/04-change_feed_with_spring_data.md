@@ -1,15 +1,28 @@
 # Azure Cosmos DB Cassandra API - Change Feed
 
-Change feed support in the Azure Cosmos DB API for Cassandra is available through the query predicates in the Cassandra Query Language (CQL). Using these predicate conditions, you can query the change feed API. Applications can get the changes made to a table using the primary key (also known as the partition key) as is required in CQL. You can then take further actions based on the results. Changes to the rows in the table are captured in the order of their modification time and the sort order is guaranteed per partition key.
+## Introduction
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](07-cleaning_up.md) to remove all lab resources.
+Change feed support in the Azure Cosmos DB API for Cassandra is available through the query predicates in the Cassandra Query Language (CQL). Using these predicate conditions, you can query the change feed API. Applications can get the changes made to a table using the primary key (also known as the partition key) as is required in CQL and can then take further actions based on the results. Changes to the rows in the table are captured in the order of their modification time and the sort order is guaranteed per partition key.
 
+Here is the query used to get a change feed on all the rows in a Cassandra API table. Notice the `COSMOS_CHANGEFEED_START_TIME()` predicate that is used directly within CQL to query items in the change feed from a specified start time (in this case current datetime). The paging state is used to ensure that the query resumes at the last point changes were read.
 
-In this lab, you will see the Change Feed feature of Cosmos DB Cassandra API. Components include:
+```java
+private static String CHANGE_FEED_QUERY = "SELECT * FROM ordersapp.orders where COSMOS_CHANGEFEED_START_TIME()='"+ formatter.format(LocalDateTime.now()) + "'";
+```
 
-1. Orders Service: CRUD app using Spring Data Cassandra that provides a REST API to create orders
-2. Power BI: Acts as a data sink for orders and provides (near real-time) dashboard with statistics such as number of orders, average order price, total purchase order per location. Uses the REST API streaming data set
-3. Change Feed Processor Service: Standalone Java service that detects changes to orders in Cosmos DB (using Change Feed) and invokes the Power BI REST endpoint to submit this data for the dashboards to reflect latest information
+This translates to the following query at runtime:
+
+```sql
+SELECT * FROM ordersapp.orders where COSMOS_CHANGEFEED_START_TIME()='2020-08-21 10:33:17'
+```
+
+## Overview
+
+To demonstrate the Change Feed feature, this lab makes use of the following components:
+
+1. Orders Service: A REST API using Spring Data Cassandra that allows you to create and delete orders.
+2. Power BI [Streaming Dataset](https://docs.microsoft.com/en-us/power-bi/connect-data/service-real-time-streaming) and [Dashboard](https://docs.microsoft.com/en-us/power-bi/create-reports/service-dashboards): Acts as a sink for orders and provides (near real-time) dashboard with statistics such as number of orders, average order price, total purchase order per location.
+3. Change Feed Processor Service: A standalone Java service that detects changes to orders in Cosmos DB (using Change Feed) and uses the [Power BI REST API](https://docs.microsoft.com/en-us/power-bi/connect-data/service-real-time-streaming#using-power-bi-rest-apis-to-push-data) to submit this data for the dashboards to reflect latest information.
 
 ## Setup Power BI streaming dataset
 
@@ -32,8 +45,6 @@ Once the dataset if created, you will see a confirmation screen as such. Please 
 
 ## Configure and start Orders API service
 
-This exposes a REST API to submit new orders to Cosmos DB Cassandra API.
-
 Clone the repository
 
 ```bash
@@ -49,7 +60,7 @@ Enter `ordersapp` as the name and click **OK** to proceed.
 
 ![](../media/04-cosmos_create_ks_2.png)
 
-Update the `application.properties` located in `cassandra-wokrshops/labs/java/solutions/Lab04/orders-spring-data/src/main/resources` to include info for your Cosmos DB account.
+Update the `application.properties` located in `cassandra-wokrshops/labs/java/solutions/Lab04/orders-spring-data/src/main/resources`:
 
 ```properties
 spring.data.cassandra.keyspace-name=ordersapp
@@ -82,7 +93,7 @@ java -jar target/orders-spring-data-0.1.0-SNAPSHOT.jar
 
 > The `orders` table will be automatically created when the service is started for the first time
 
-You will see logs:
+You should see logs similar to this:
 
 ```bash
 .......
@@ -99,7 +110,7 @@ INFO 54373 --- [           main] c.m.azure.samples.spring.Application     : Star
 
 This is standalone service which listens to changes in the `orders` table in the `ordersapp` keyspace. It shows how to get a change feed on all the rows in a Cassandra API Keyspace table. The predicate `COSMOS_CHANGEFEED_START_TIME()` is used directly within CQL to query items in the change feed from a specified start time.
 
-Update the `config.properties` gile located in `cassandra-wokrshops/labs/java/solutions/Lab04/orders-changefeed-processor/src/main/resources` to include info for your Cosmos DB account.
+Update the `config.properties` file located in `cassandra-wokrshops/labs/java/solutions/Lab04/orders-changefeed-processor/src/main/resources`:
 
 ```properties
 cassandra_host=<cosmos account>.cassandra.cosmos.azure.com
@@ -118,7 +129,7 @@ Note on optional fields:
 
 ## Create new orders
 
-Create new orders using the Orders Spring Data service you started. These will be detected by the change feed processor
+Create new orders using the Orders Spring Data service:
 
 ```shell
 curl -s -d '{"amount":"400", "location":"NY"}' -H "Content-Type: application/json" -X POST http://localhost:8080/orders
@@ -131,14 +142,14 @@ Confirm that the order data was stored in Cassandra. Go to your Cosmos DB accoun
 
 ![](../media/04-cosmos_check.png)
 
-The change event processor service will detect these orders and send them to Power BI. You can continue to create orders manually or run this script to create orders in bulk
+The change event processor service will detect these orders and send them to Power BI. You can continue to create orders manually or run this script to create orders in bulk:
 
 ```bash
 chmod a+x generator.sh
 ./generator.sh
 ```
 
-The Power BI streaming dataset should now have substantial data. You can move on and configure your dashboard
+Let the script run for a while to ensure that the Power BI streaming dataset has substantial data. You can move on and configure the Power BI dashboard:
 
 ## Configure Power BI Dashboard
 
@@ -184,7 +195,7 @@ In the text box, enter the following query and select **Pin visual**
 
 ![](../media/04-pbi_dashboard_8.png)
 
-Repeat for these queries:
+Repeat the previous step for these queries:
 
 - `total data` - will provide total no. of orders so far
 - `total amount` - will provide total sales so far
@@ -192,7 +203,11 @@ Repeat for these queries:
 - `sum of amount by location` - total sales per city
 - `average amount by location` - average sales per city
 
+As live data flows into Power BI streaming dataset through the Change Feed Processor service, you should see the dashboard update in real-time.
+
 ![](../media/04-pbi_dashboard.png)
+
+> If this is your final lab, follow the steps in [Removing Lab Assets](07-cleaning_up.md) to remove all lab resources.
 
 ## Additional Resources
 
