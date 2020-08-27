@@ -14,16 +14,20 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Host;
 import com.datastax.driver.core.JdkSSLOptions;
+import com.datastax.driver.core.LatencyTracker;
 import com.datastax.driver.core.RemoteEndpointAwareJdkSSLOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
+import com.datastax.driver.core.Statement;
 import com.microsoft.azure.cosmos.cassandra.CosmosLoadBalancingPolicy;
 import com.microsoft.azure.cosmos.cassandra.CosmosRetryPolicy;
 
@@ -130,16 +134,46 @@ public class Util {
         System.out.println("Cassandra read DC:" + cosmosReadDC);
         System.out.println("Cassandra write DC:" + cosmosWriteDC);
 
-        // set load balancing policy to prefer reads and writes to West US region
-        CosmosLoadBalancingPolicy loadBalancingPolicy = CosmosLoadBalancingPolicy.builder().withWriteDC(cosmosWriteDC)
-                .withReadDC(cosmosReadDC).build();
+        // CosmosLoadBalancingPolicy loadBalancingPolicy =
+        // CosmosLoadBalancingPolicy.builder().withWriteDC(cosmosWriteDC)
+        // .withReadDC(cosmosReadDC).build();
+
+        // CosmosLoadBalancingPolicy loadBalancingPolicy =
+        // CosmosLoadBalancingPolicy.builder().withGlobalEndpoint(contactPoints).build();
 
         Cluster cluster = Cluster.builder().addContactPoints(new String[] { contactPoints }).withPort(port)
-                .withCredentials(cassandraUsername, cassandraPassword)
-                .withRetryPolicy(retryPolicy)
-                .withLoadBalancingPolicy(loadBalancingPolicy).withSSL(sslOptions).withSocketOptions(options).build();
+                .withCredentials(cassandraUsername, cassandraPassword).withRetryPolicy(retryPolicy)
+                // .withLoadBalancingPolicy(loadBalancingPolicy)
+                .withSSL(sslOptions).withSocketOptions(options).build();
+
+        // cluster.register(new StatsLogger());
 
         System.out.println("Connected to cluster: " + cluster.getClusterName());
         return cluster.connect(cassandraKeyspace);
+    }
+
+    public static class StatsLogger implements LatencyTracker {
+
+        @Override
+        public void update(Host host, Statement statement, Exception exception, long newLatencyNanos) {
+            System.out.println("*******Stats START********");
+            System.out.println("data center - " + host.getDatacenter());
+            System.out.println("address - " + new String(host.getAddress().getHostAddress()));
+            System.out.println("query - " + statement.toString());
+            System.out.println(
+                    "latency (in ms) - " + TimeUnit.MILLISECONDS.convert(newLatencyNanos, TimeUnit.NANOSECONDS));
+            System.out.println("*******Stats END********");
+
+        }
+
+        @Override
+        public void onRegister(Cluster cluster) {
+            // no-op
+        }
+
+        @Override
+        public void onUnregister(Cluster cluster) {
+            // no-op
+        }
     }
 }
