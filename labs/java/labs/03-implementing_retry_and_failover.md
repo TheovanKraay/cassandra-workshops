@@ -301,9 +301,256 @@ In-depth explanation of is out of scope of this lab. Please consult the [source 
 
 In a nutshell, the retry policy handles errors such as `OverLoadedError` (which may occur due to rate limiting), and parses the exception message to use `RetryAfterMs` field provided from the server as the back-off duration for retries. If `RetryAfterMs` is not available, it defaults to an exponential growing back-off scheme. In this case the time between retries is increased by a growing back off time (default: 1000 ms) on each retry, unless `maxRetryCount` is -1, in which case it backs off with a fixed duration. It is important to handle rate limiting in Azure Cosmos DB to prevent errors when provisioned throughput has been exhausted.
 
-## Failover with Load Balancing
+## Failover and Load Balancing
 
-TODO
+This part covers the following scenarios:
+
+1. Manual failover with Global endpoint load balancing
+2. Load balancing for specific read and write DC
+3. Correlation between data locality and latency
+
+### Manual failover with Global endpoint load balancing
+
+**Pre-requisites**
+
+Configure your Cosmos DB account for multi-region (single master). Open your Cosmos DB account in Azure Portal, select **Replicate data globally**. Modify the regions configuration as per your choice
+
+![](../media/03-replication.png)
+
+For example, I have configured **Southeast Asia** as the `Write` region and **East US** as the `Read` region.
+
+Update the code to ensure that:
+
+1. The right load balancing (global endpoint) is active
+2. The custom `LatencyTracker` implementation is un-commented - it is used to log the datacenter (and related statistics) for each query
+
+![](../media/03-update-code.png)
+
+To start the application:
+
+```shell
+cd cassandra-workshops/labs/java/solutions/Lab03/orders-spring-data
+mvn clean package
+java -jar target/orders-spring-data-0.1.0-SNAPSHOT.jar
+```
+
+**Insert a few records using the REST API endpoint**
+
+```shell
+curl -X POST -H "Content-Type: application/json" -d '{"amount":"42", "location":"foo"}' http://localhost:8080/orders
+```
+
+In the logs, you should see:
+
+```shell
+*******Stats START********
+data center - Southeast Asia
+address - 52.230.23.170
+Added order ID 3ca8b9e0-e85b-11ea-af17-4f997ed1313f
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',3ca8b9e0-e85b-11ea-af17-4f997ed1313f,'foo','2020-08-27T11:48:34.559Z');
+latency (in ms) - 186
+*******Stats END********
+*******Stats START********
+data center - Southeast Asia
+Added order ID 3e4b9470-e85b-11ea-af17-4f997ed1313f
+address - 52.230.23.170
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',3e4b9470-e85b-11ea-af17-4f997ed1313f,'foo','2020-08-27T11:48:37.303Z');
+latency (in ms) - 88
+*******Stats END********
+....
+```
+
+Notice that the `Southeast Asia` region is being used for Write operations (as per configuration).
+
+**Test failover**
+
+To initiate a failover, open your Cosmos DB account, choose **Replicate data globally** and **Manual Failover**
+
+![](../media/03-failover-1.png)
+
+Configure the Read region as the Write region. Click **Ok** to confirm the changes.
+
+For example, East US which was previously a Read region is being chosen as the Write region (replacing Southeast Asia). 
+
+![](../media/03-failover-2.png)
+
+
+Continue using the application to insert records. Since this is not a "proper region failure", the writes will still be successful. You will notice that the application still continues to use the `Southeast Asia` region for the write requests. 
+
+Wait for the Manual Failover changes to take effect. As a soon as that happens (after a few seconds), the application will automatically select East US for write operations - this can be easily confirmed using the application logs since it outputs the data center for each query being executed 
+
+Here is the code snippet for custom `LatencyTracker` implementation:
+
+```java
+
+    public static class StatsLogger implements LatencyTracker {
+
+        @Override
+        public void update(Host host, Statement statement, Exception exception, long newLatencyNanos) {
+            System.out.println("*******Stats START********");
+            System.out.println("data center - " + host.getDatacenter());
+            System.out.println("address - " + new String(host.getAddress().getHostAddress()));
+            System.out.println("query - " + statement.toString());
+            System.out.println(
+                    "latency (in ms) - " + TimeUnit.MILLISECONDS.convert(newLatencyNanos, TimeUnit.NANOSECONDS));
+            System.out.println("*******Stats END********");
+
+        }
+    ....
+```
+
+### Load balancing for specific read and write DC
+
+In this section, you will see how you can re-direct read and write operations to the region of your choice by simply configuring the Load Balancing policy in your application.
+
+**Pre-requisites**
+
+Update `application.properties` with read and write regions.
+
+```properties
+...
+cosmos_retry_read_dc=Southeast Asia
+cosmos_retry_write_dc=East US
+```
+
+Update the load balancing strategy used in the code. Comment out the global endpoint policy and use the one based on read and write DC
+
+![](../media/03-update-code_2.png)
+
+To start the application:
+
+```shell
+cd cassandra-workshops/labs/java/solutions/Lab03/orders-spring-data
+mvn clean package
+java -jar target/orders-spring-data-0.1.0-SNAPSHOT.jar
+```
+
+**Test Read/Write load balancing**
+
+Use the REST API to insert a record
+
+```shell
+curl -X POST -H "Content-Type: application/json" -d '{"amount":"42", "location":"foo"}' http://localhost:8080/orders
+
+//output
+Added order ID 4c4ea0e0-e85f-11ea-826e-65481f0c82a0
+```
+
+In the application logs, you can see that the Write operation was directed to East US (as per configuration)
+
+```shell
+*******Stats START********
+data center - East US
+Added order ID 4c4ea0e0-e85f-11ea-826e-65481f0c82a0
+address - 104.45.144.73
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',4c4ea0e0-e85f-11ea-826e-65481f0c82a0,'foo','2020-08-27T11:48:37.303Z');
+latency (in ms) - 230
+*******Stats END********
+```
+
+Use the order ID in the previous output to execute a read operation as such:
+
+```shell
+curl http://localhost:8080/orders/4c4ea0e0-e85f-11ea-826e-65481f0c82a0
+```
+
+You will get back the order details and more importantly, in the application logs, you can see that the read operation was directed to Southeast Asia region (as per current configuration)
+
+### Correlation between data locality and latency
+
+In this section you will see what effect does data locality have on latency. Write operations have been used as an example, but the same is applicable for reads as well.
+
+So far, you've been running the application from your machine. To test data locality, we will run our REST API service from the same region which has been configured as the Write region in your Cosmos DB account. Creating a VM in the same region is one of the options, but we will use [Azure Cloud Shell](https://docs.microsoft.com/en-us/azure/cloud-shell/overview) to keep things simple.
+
+**Setup and configure Azure Cloud Shell**
+
+Open `shell.azure.com` in your browser and choose the the **same region** as the one you designated for writes.
+
+Launch Cloud Shell from the top navigation of the Azure portal.
+
+![](https://docs.microsoft.com/en-us/azure/cloud-shell/media/quickstart/shell-icon.png)
+
+Select the **Bash** environment
+
+![](https://docs.microsoft.com/en-us/azure/cloud-shell/media/quickstart/env-selector.png)
+
+By using the advanced configuration option, you can associate existing resources or create new ones for the Cloud Shell. When selecting a Cloud Shell region you must select a backing storage account co-located in the same region. Ensure that the region is same as the one you're testing the data locality for.
+
+![](https://docs.microsoft.com/en-us/azure/cloud-shell/media/persisting-shell-storage/advanced-storage.png)
+
+Once Cloud Shell is configured you will be logged in and the console should be available.
+
+To start with, you will beed to upload the following files:
+
+1. The `orders-spring-data-0.1.0-SNAPSHOT.jar` file (in `target` folder), and
+2. Testing script - `load.sh` file
+
+Initiate the file upload and select the files:
+
+![](../media/03-upload_1.png)
+
+Once complete, you can confirm (`ls -lrt`):
+
+![](../media/03-upload_2.png)
+
+**Test data locality**
+
+Set the `JAVA_HOME` env variable and start the application
+
+```shell
+export JAVA_HOME=/usr/lib/jvm/zulu-8-azure-amd64/
+java -jar -Dserver.port=9090 orders-spring-data-0.1.0-SNAPSHOT.jar
+```
+
+> Note that we're using port `9090` (and not the default `8080` port since its not available in Cloud Shell environment)
+
+Start another shell session (from a different browser tab) and initiate the testing script:
+
+```shell
+chmod a+x load.sh
+
+./load.sh
+
+(press ctrl+c to stop the script)
+```
+
+In the application logs, you should an output similar to this:
+
+```shell
+*******Stats START********
+data center - East US
+address - 104.45.144.73
+Added order ID a10285b0-e856-11ea-86b0-5d0c82b66df0
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',a10285b0-e856-11ea-86b0-5d0c82b66df0,'foo','2020-08-27T11:15:35.436Z');
+latency (in ms) - 8
+*******Stats END********
+*******Stats START********
+data center - East US
+Added order ID a431f3b0-e856-11ea-86b0-5d0c82b66df0
+address - 104.45.144.73
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',a431f3b0-e856-11ea-86b0-5d0c82b66df0,'foo','2020-08-27T11:15:40.779Z');
+latency (in ms) - 7
+*******Stats END********
+*******Stats START********
+data center - East US
+address - 104.45.144.73
+Added order ID a73e2240-e856-11ea-86b0-5d0c82b66df0
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',a73e2240-e856-11ea-86b0-5d0c82b66df0,'foo','2020-08-27T11:15:45.892Z');
+latency (in ms) - 7
+*******Stats END********
+*******Stats START********
+data center - East US
+Added order ID aa4b1420-e856-11ea-86b0-5d0c82b66df0
+address - 104.45.144.73
+query - INSERT INTO orders (amount,id,location,time) VALUES ('42',aa4b1420-e856-11ea-86b0-5d0c82b66df0,'foo','2020-08-27T11:15:51.010Z');
+latency (in ms) - 9
+*******Stats END********
+......
+```
+
+Notice the single digit latency (in millisecond). This is because you're (the client application) executing writes from the the same region as the data center that you had configured for Write operations.
+
+> Try out the same scenario from you local machine. The overall latency will still be small, but not as low as the previous numbers
 
 ## Conclusion
 
@@ -316,3 +563,4 @@ TODO
 - https://docs.microsoft.com/en-us/azure/cosmos-db/cassandra-support#usage-of-cassandra-retry-connection-policy
 - https://docs.microsoft.com/en-us/azure/cosmos-db/manage-scale-cassandra
 - https://github.com/Azure-Samples/azure-cosmos-cassandra-java-retry-sample
+- https://docs.microsoft.com/en-us/azure/cosmos-db/high-availability
