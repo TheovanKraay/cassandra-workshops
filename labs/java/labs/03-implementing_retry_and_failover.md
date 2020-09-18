@@ -36,12 +36,31 @@ Enter `ordersapp` as the name and click **OK** to proceed.
 
 ![](../media/04-cosmos_create_ks_2.png)
 
-2. Install [hey](https://github.com/rakyll/hey), a load testing program. You can download OS specific binaries from these links, but please Refer to https://github.com/rakyll/hey#installation for latest information:
+2. Install [hey](https://github.com/rakyll/hey), a load testing program. 
+
+> You are free to use any tool of your choice for load testing e.g. JMeter. The tool should be capable of invoking an HTTP endpoint
+
+To install `hey` from source:
+
+- Install Go - https://golang.org/dl/
+- `cd $GOPATH`
+- get the source - `go get github.com/rakyll/hey`
+- change into the directory - `cd github.com/rakyll/hey`
+- create an executable specific to your OS:
+
+```bash
+GOOS=windows GOARCH=amd64 go build -o ./bin/hey
+GOOS=linux GOARCH=amd64 go build -o ./bin/hey
+GOOS=darwin GOARCH=amd64 go build -o ./bin/hey
+```
+
+This should create a binary (name `hey`) in the `bin` folder of the current directory. You can move it anywhere in the file system
+
+You can download OS specific binaries from these links, but please refer to https://github.com/rakyll/hey#installation for latest information:
 
 - Linux 64-bit: https://storage.googleapis.com/hey-release/hey_linux_amd64
 - Mac 64-bit: https://storage.googleapis.com/hey-release/hey_darwin_amd64
 - Windows 64-bit: https://storage.googleapis.com/hey-release/hey_windows_amd64
-
 
 ### Configure and setup Orders API service
 
