@@ -1,4 +1,4 @@
-# Monitoring Azure Cosmos DB Performance
+# Monitoring Azure Cosmos DB Cassandra API Performance
 
 TODO
 
